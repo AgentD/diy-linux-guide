@@ -325,5 +325,11 @@ filesystems:
 We can now finally put everything together into an XZ compressed initial
 ramdisk:
 
-    ./gen_init_cpio initrd.files | xz > initrd.xz
+    ./gen_init_cpio initrd.files | xz --check=crc32 > initrd.xz
     cp initrd.xz "$SYSROOT/boot"
+
+The option `--check=crc32` forces the `xz` utility to create CRC-32 checksums
+instead of using sha256. This is necessary, because the kernel built in
+xz library cannot do sha256, will refuse to unpack the image otherwise and the
+system won't boot.
+
