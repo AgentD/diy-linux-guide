@@ -81,12 +81,14 @@ For compiling the packages you will need:
 * curl
 * pkg-config
 * libtool
+* openssl (with headers)
 
 
 In case you wonder: you need the C++ compiler to build GCC. The GCC code base
 mainly uses C99, but with some additional C++ features. makeinfo is used by
 the GNU utilities that generate info pages from texinfo. ncurses is mainly
-needed by the kernel build system for `menuconfig`.
+needed by the kernel build system for `menuconfig`. OpenSSL is requried to
+compile the kernel later on.
 
 The list should be fairly complete, but I can't guarantee that I didn't miss
 something. Normally I work on systems with tons of development tools and

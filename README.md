@@ -14,9 +14,9 @@ command lines around (I'm looking at you, LFS).
 This guide is divided into the following parts:
 
 * [Building a cross compiler toolchain](crosscc.md).
-* Cross compiling a statically linked BusyBox and the kernel. The kernel has
-  a built-in initrd containing our BusyBox. We will make it boot on the
-  Rapsberry Pi and explore some parts of the Linux boot process.
+* [Cross compiling a statically linked BusyBox and the kernel](kernel.md). The
+  kernel has a built-in initrd containing our BusyBox. We will make it boot on
+  the Rapsberry Pi and explore some parts of the Linux boot process.
 * Building a more sophisticated userland. The userland will be packed into a
   SquashFS image. The BusyBox based initrd is modified to mount it and switch
   into it.
