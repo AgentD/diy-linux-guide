@@ -333,3 +333,83 @@ instead of using sha256. This is necessary, because the kernel built in
 xz library cannot do sha256, will refuse to unpack the image otherwise and the
 system won't boot.
 
+
+## Putting everything on the Raspberry Pi and Booting it
+
+Remember how I mentioned earlier that the last step of our boot loader chain
+would involve something sane, like U-Boot or BareBox? Well, not on the
+Raspberry Pi.
+
+In addition to the already bizarro hardware, the Raspberry Pi has a lot of
+proprietary magic baked directly into the hardware. The boot process is
+controlled by the GPU, since the SoC is basically a GPU with an ARM CPU slapped
+on to it.
+
+The GPU loads a binary called `bootcode.bin` from the SD card, which contains a
+proprietary boot loader blob for GPU. It does some initialization and chain
+loads `start.elf` which contains a firmware blob for the GPU. The GPU is running
+an RTOS called [ThreadX OS](https://en.wikipedia.org/wiki/ThreadX) and somewhere
+around [1M lines](https://www.raspberrypi.org/forums/viewtopic.php?t=53007#p406247)
+worth of firmware code.
+
+There are different versions of `start.elf`. The one called `start_x.elf`
+contains an additional driver for the camera interface, `start_db.elf` is a
+debug version and `start_cd.elf` is a version with a cut-down memory layout.
+
+In the end, the GPU firmware loads and parses a file called `config.txt` from
+the SD card, which contains configuration parameters, and `cmdline.txt` which
+contains the kernel command line. After parsing the configuration, it finally
+loads the kernel, the initrd, the device tree binaries and runs the kernel.
+
+### Copying the Files Over
+
+First, we need a micro SD card with a FAT32 partition on it. How to create the
+partition is left as an exercise to the reader.
+
+Onto this partition, we copy the proprietary boot loader blobs:
+
+* [bootcode.bin](firmware/bootcode.bin)
+* [fixup.dat](firmware/fixup.data)
+* [start.elf](firmware/start.elf)
+
+We create a minimal [config.txt](firmware/config.txt) in the root directory:
+
+	dtparam=
+	kernel=zImage
+	initramfs initrd.xz followkernel
+
+The first line makes sure the boot loader doesn't mangle the device tree. The
+second one specifies the kernel binary that should be loaded and the last one
+specifies the initrd image. Note that there is no `=` sign in the last
+line. This field has a different format and the boot loader will ignore it if
+there is an `=` sign. The `followkernel` attribute tells the boot loader to put
+the initrd into memory right after the kernel binary.
+
+Then, we'll put the [cmdline.txt](firmware/cmdline.txt) onto the SD card:
+
+	console=tty0
+
+The `console` parameter tells the kernel what to use as a console device. We
+tell it to use the first video console which is what we will get at the HDMI
+output of the Raspberry Pi.
+
+Whats left is the device tree binaries and lastly the kernel and initrd:
+
+    mkdir -p overlays
+    cp $SYSROOT/boot/dts/*-rpi-3-*.dtb .
+    cp $SYSROOT/boot/dts/overlays/*.dtbo overlays/
+
+    cp $SYSROOT/boot/initrd.xz .
+    cp $SYSROOT/boot/zImage .
+
+If you are done, unmount the micro SD card and plug it into your Raspberr Pi.
+
+
+### Booting It Up
+
+If you connect the HDMI port and power up the Raspberry Pi, it should boot
+directly into the initrd and you should get a BusyBox shell.
+
+The PATH is propperly set and the most common shell commands should be there, so
+you can poke around the root filesystem which is in memory and has been unpacked
+from the `initrd.xz`.
