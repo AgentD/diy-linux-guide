@@ -146,7 +146,7 @@ compiler and the standard library.
 
 First of all, the GCC build system needs to know *what* kind of C standard
 library we are using and *where* to find it. For dynamically linked programs,
-it also needs to know what loaded we are going to use, which is typically
+it also needs to know what loader we are going to use, which is typically
 also provided by the C standard library. For more details, you can read this
 high level overview [how dyncamically linked ELF programs are run](elfstartup.md).
 
@@ -183,8 +183,9 @@ Most of the software we are going to build is using autotools based build
 systems. There are a few things we should know when working with autotools
 based packages.
 
-GNU autotools makes cross compilation easy. This was especially important in
-the early days of the GNU project when there were dozens of incompatible
+GNU autotools makes cross compilation easy and has checks and workarounds for
+the most bizarre platforms and their misfeatures. This was especially important
+in the early days of the GNU project when there were dozens of incompatible
 Unices on widely varying hardware platforms and the GNU packages were supposed
 to build and run on all of them.
 
@@ -235,7 +236,7 @@ three options:
 * The **--target** option is specific for packages that contain compilers
   and specify what system to generate output for.
 
-Those options take as an argument a dash seperated tuple that describtes
+Those options take as an argument a dash seperated tuple that describes
 a system and is made up the following way:
 
 	<architecture>-<kernel>-<userspace>
@@ -280,12 +281,13 @@ location of the root directory when installing.
 
 For instance if running the following:
 
-	./configure --prefix=/usr
+	./configure --prefix=/usr/local
 	make
 	make DESTDIR=/tmp/test install
 
-the program `foo` will be installed to `/tmp/test/usr/bin/foo` but the program
-and the build system "think" it has been installed to `/usr/bin/foo`.
+the program `foo` will be installed to `/tmp/test/usr/local/bin/foo` but the
+program and the build system "think" it has been installed
+to `/usr/local/bin/foo`.
 
 
 ## Getting started
