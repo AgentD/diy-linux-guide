@@ -70,7 +70,41 @@ archives for the initial ramdisk.
 
 ### Device Tree
 
-TODO: explain
+On a typical x86 PC, your hardware devices are attached to the PCI bus and the
+kernel can easily scan it to find everything. The devices have nice IDs that
+the kernel can query and the drivers tell the kernel what IDs that they can
+handle.
+
+On embedded machines running e.g. ARM based SoCs, the situation is a bit
+different. The various SoC vendors buy licenses for all the hardware "IP cores"
+and slap them together and multiplex them onto the CPU cores memory bus. The
+hardware registers end up mapped to SoC specific memory locations and there is
+no real way to scan for possibly present hardware.
+
+In the past, Linux had something called "bored files" that where SoC specific
+C files that contained SoC & board specific initialization code, but this was
+considered too inflexible.
+
+Linux eventually adopted the concept of a device tree binary, which is
+basically a binary blob that hierarchically describes the hardware present on
+the system and how the kernel can interface with it.
+
+The boot loader loads the device tree into memory and tells the kernel where it
+is, just like it already does for the initial ramdisk and command line.
+
+In theory, a kernel binary can now be started on a number of different boards
+with the same CPU architecture, without recompiling (assuming it has all the
+drivers). It just needs the correct device tree binary for the board.
+
+The device tree binary (dtb) itself is generated from a number of source
+files (dts) located in the kernel source tree under `arch/<cpu>/boot/dts`.
+They are compiled together with the kernel using a device tree compiler that
+is also part of the kernel source.
+
+On a side note, the device tree format originates from the BIOS equivalent
+of SPARC workstations. The format is now standardized through a specification
+provided by the Open Firmware project and Linux considers it part of its ABI,
+i.e. a newer kernel should *always* work with an older DTB file.
 
 ## Overview
 
