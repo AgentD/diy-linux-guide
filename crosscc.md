@@ -52,15 +52,15 @@ convenience, we will also store its absolute path in a shell variable:
 The following source packages are required for building the toolchain. The
 links below point to the exact versions that I used.
 
-* [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20190925-1.tar.gz).
+* [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20201201-1.tar.gz).
   Linux is a very popular OS kernel that we will use on our target system.
   We need it to build the the C standard library for our toolchain.
-* [Musl](https://www.musl-libc.org/releases/musl-1.1.24.tar.gz). A tiny
+* [Musl](https://www.musl-libc.org/releases/musl-1.2.1.tar.gz). A tiny
   C standard library implementation.
-* [Binutils](https://ftp.gnu.org/gnu/binutils/binutils-2.33.1.tar.xz). This
+* [Binutils](https://ftp.gnu.org/gnu/binutils/binutils-2.35.tar.xz). This
   contains the GNU assembler, linker and various tools for working with
   executable files.
-* [GCC](https://ftp.gnu.org/gnu/gcc/gcc-9.2.0/gcc-9.2.0.tar.xz), the GNU
+* [GCC](https://ftp.gnu.org/gnu/gcc/gcc-10.2.0/gcc-10.2.0.tar.xz), the GNU
   compiler collection. Contains compilers for C and other languages.
 
 For compiling the packages you will need:
@@ -109,22 +109,22 @@ Right now, you should have a directory tree that looks something like this:
 * toolchain/
    * bin/
 * src/
-   * binutils-2.33.1/
-   * gcc-9.2.0/
-   * musl-1.1.24/
-   * linux-raspberrypi-kernel_1.20190925-1/
+   * binutils-2.35/
+   * gcc-10.2.0/
+   * musl-1.2.1/
+   * linux-raspberrypi-kernel_1.20201201-1/
 * download/
-   * binutils-2.33.1.tar.xz
-   * gcc-9.2.0.tar.xz
-   * musl-1.1.24.tar.gz
-   * raspberrypi-kernel_1.20190925-1.tar.gz
+   * binutils-2.35.tar.xz
+   * gcc-10.2.0.tar.xz
+   * musl-1.2.1.tar.gz
+   * raspberrypi-kernel_1.20201201-1.tar.gz
 * sysroot/
 
 For building GCC, we will need to download some additional support libraries.
 Namely gmp, mfpr, mpc and isl that have to be unpacked inside the GCC source
 tree. Luckily, GCC nowadays provides a shell script that will do that for us:
 
-	cd "$BUILDROOT/src/gcc-9.2.0"
+	cd "$BUILDROOT/src/gcc-10.2.0"
 	./contrib/download_prerequisites
 	cd "$BUILDROOT"
 
@@ -362,7 +362,7 @@ we kept the kernel source. A pattern that we will repeat later:
     export KBUILD_OUTPUT="$BUILDROOT/build/linux"
     mkdir -p "$KBUILD_OUTPUT"
 
-    srcdir="$BUILDROOT/src/linux-raspberrypi-kernel_1.20190925-1"
+    srcdir="$BUILDROOT/src/linux-raspberrypi-kernel_1.20201201-1"
 
     cd "$srcdir"
     make O="$KBUILD_OUTPUT" ARCH="$LINUX_ARCH" headers_check
@@ -412,7 +412,7 @@ it:
     mkdir -p "$BUILDROOT/build/binutils"
     cd "$BUILDROOT/build/binutils"
 
-    srcdir="$BUILDROOT/src/binutils-2.33.1"
+    srcdir="$BUILDROOT/src/binutils-2.35"
 
 From the binutils build directory we run the configure script:
 
@@ -484,7 +484,7 @@ into it and store the source location in a variable:
     mkdir -p "$BUILDROOT/build/gcc-1"
     cd "$BUILDROOT/build/gcc-1"
 
-    srcdir="$BUILDROOT/src/gcc-9.2.0"
+    srcdir="$BUILDROOT/src/gcc-10.2.0"
 
 Notice, how the build directory is called *gcc-1*. For the second pass, we
 will later create a different build directory. Not only does this out of tree
@@ -500,8 +500,8 @@ source tree.
                       --disable-libssp --disable-libatomic \
                       --disable-libquadmath --disable-threads \
                       --enable-languages=c --with-newlib \
-					  --with-arch="$GCC_CPU" --with-float=hard \
-					  --with-fpu=neon-vfpv3
+                      --with-arch="$GCC_CPU" --with-float=hard \
+                      --with-fpu=neon-vfpv3
 
 The **--prefix**, **--target** and **--with-sysroot** work just like above for
 binutils.
@@ -557,7 +557,7 @@ We create our build directory and change there:
     mkdir -p "$BUILDROOT/build/musl"
     cd "$BUILDROOT/build/musl"
 
-    srcdir="$BUILDROOT/src/musl-1.1.24"
+    srcdir="$BUILDROOT/src/musl-1.2.1"
 
 Musl is quite easy to build but requires some special handling, because it
 doesn't use autotools. The configure script is actually a hand written shell
@@ -596,7 +596,7 @@ build directory:
     mkdir -p "$BUILDROOT/build/gcc-2"
     cd "$BUILDROOT/build/gcc-2"
 
-    srcdir="$BUILDROOT/src/gcc-9.2.0"
+    srcdir="$BUILDROOT/src/gcc-10.2.0"
 
 Most of the configure options should be familiar already:
 
@@ -607,7 +607,7 @@ Most of the configure options should be familiar already:
                       --disable-libmudflap --disable-multilib \
                       --disable-libsanitizer --with-arch="$CPU" \
                       --with-native-system-header-dir="/include" \
-					  --with-float=hard --with-fpu=neon-vfpv3
+                      --with-float=hard --with-fpu=neon-vfpv3
 
 For the second pass, we also build a C++ compiler. The options **--enable-c99**
 and **--enable-long-long** are actually C++ specific. When our final compiler

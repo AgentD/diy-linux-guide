@@ -114,8 +114,8 @@ cross compile the kernel and get all of this to run on the Raspberry Pi.
 Unless you have used the `download.sh` script from [the cross toolchain](crosscc.md),
 you will need to download and unpack the following:
 
-* [BusyBox](https://busybox.net/downloads/busybox-1.31.1.tar.bz2)
-* [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20190925-1.tar.gz)
+* [BusyBox](https://busybox.net/downloads/busybox-1.32.0.tar.bz2)
+* [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20201201-1.tar.gz)
 
 You should still have the following environment variables set from building the
 cross toolchain:
@@ -163,7 +163,7 @@ Alternatively you can start from scratch by creating a default configuration:
 
 To compile BusyBox, we'll first do the usual setup for the out-of-tree build:
 
-    srcdir="$BUILDROOT/src/busybox-1.31.1"
+    srcdir="$BUILDROOT/src/busybox-1.32.0"
     export KBUILD_OUTPUT="$BUILDROOT/build/bbstatic"
 
     mkdir -p "$KBUILD_OUTPUT"
@@ -200,7 +200,7 @@ to the sysroot directory as `bbstatic`.
 
 First, we do the same dance again for the kernel out of tree build:
 
-    srcdir="$BUILDROOT/src/linux-raspberrypi-kernel_1.20190925-1"
+    srcdir="$BUILDROOT/src/linux-raspberrypi-kernel_1.20201201-1"
     export KBUILD_OUTPUT="$BUILDROOT/build/linux"
 
     mkdir -p "$KBUILD_OUTPUT"
@@ -227,7 +227,7 @@ generally don't contain **CONFIG_**.
 Same as with BusyBox, we insert the cross compile prefix into the configuration
 file:
 
-    sed -i "$PKGBUILDDIR/.config" -e 's,^CONFIG_CROSS_COMPILE=.*,CONFIG_CROSS_COMPILE="'$TARGET'-",'
+    sed -i "$KBUILD_OUTPUT/.config" -e 's,^CONFIG_CROSS_COMPILE=.*,CONFIG_CROSS_COMPILE="'$TARGET'-",'
 
 And then finally build the kernel:
 
@@ -278,7 +278,7 @@ some pitfalls here:
 So instead of the `cpio` tool, we are going to use a tool from the Linux kernel
 tree called `gen_init_cpio`:
 
-    gcc "$BUILDROOT/src/linux-raspberrypi-kernel_1.20190925-1/usr/gen_init_cpio.c" -o gen_init_cpio
+    gcc "$BUILDROOT/src/linux-raspberrypi-kernel_1.20201201-1/usr/gen_init_cpio.c" -o gen_init_cpio
 
 This tool allows us to create a cpio image from a very simple file listing and
 produces exactely the format that the kernel understands.
@@ -363,6 +363,7 @@ ramdisk:
 
     ./gen_init_cpio initrd.files | xz --check=crc32 > initrd.xz
     cp initrd.xz "$SYSROOT/boot"
+    cd "$BUILDROOT"
 
 The option `--check=crc32` forces the `xz` utility to create CRC-32 checksums
 instead of using sha256. This is necessary, because the kernel built in
