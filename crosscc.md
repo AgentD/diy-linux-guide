@@ -8,10 +8,8 @@ been tried on [Fedora](https://getfedora.org/) as well as on
 [OpenSUSE](https://www.opensuse.org/).
 
 The toolchain we are building generates 32 bit ARM code intended to run on
-a Raspberry Pi 3. [Musl](https://www.musl-libc.org/) is used a C standard
-library implementation. It should be possible to use the instructions provided
-here to any other system with some minor adjustments (i.e. read the manuals
-and do some thinking, don't just go ahead brainlessly).
+a Raspberry Pi 3. [Musl](https://www.musl-libc.org/) is used as a C standard
+library implementation.
 
 ## Directory Setup
 
@@ -55,7 +53,7 @@ The following source packages are required for building the toolchain. The
 links below point to the exact versions that I used.
 
 * [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20190925-1.tar.gz).
-  Linux is a very popular OS kernel that happens to run on our target system.
+  Linux is a very popular OS kernel that we will use on our target system.
   We need it to build the the C standard library for our toolchain.
 * [Musl](https://www.musl-libc.org/releases/musl-1.1.24.tar.gz). A tiny
   C standard library implementation.
@@ -103,7 +101,7 @@ into `src`.
 For convenience, I provided a small shell script called `download.sh` that,
 when run inside `$BUILDROOT`, does this and also verifies the `sha256sum`
 of the packages, which will further make sure that you are using the **exact**
-same version as I am.
+same versions as I am.
 
 Right now, you should have a directory tree that looks something like this:
 
@@ -131,7 +129,7 @@ tree. Luckily, GCC nowadays provides a shell script that will do that for us:
 	cd "$BUILDROOT"
 
 
-## Overview
+# Overview
 
 From now on, the rest of the process itself consists of the following steps:
 
@@ -177,7 +175,7 @@ library for the target system and build a fully featured `libgcc` along with
 it. We can simply install it *over* the existing GCC and `libgcc` in the
 toolchain directory (dynamic linking for the rescue).
 
-### Autotools and the canonical target tuple
+## Autotools and the canonical target tuple
 
 Most of the software we are going to build is using autotools based build
 systems. There are a few things we should know when working with autotools
@@ -190,9 +188,9 @@ Unices on widely varying hardware platforms and the GNU packages were supposed
 to build and run on all of them.
 
 Nowadays autotools offers *decades* of being used in practice and is in my
-experience a lot more mature than more modern build systems and having a semi
-standard way of cross compiling stuff with standardized configuration knobs
-is very helpful.
+experience a lot more mature than more modern build systems. Also, having a
+semi standard way of cross compiling stuff with standardized configuration
+knobs is very helpful.
 
 In contrast to many modern build systems, you don't need Autotools to run an
 Autotools based build system. The final build system it generates for the
@@ -220,10 +218,6 @@ If we don't want to clobber the source tree, we can also build a package
     ../path/to/source/configure
     make
 
-When the package developers create a release tarball with `make distcheck`,
-the Autotools actually test whether the package can be built out-of-tree
-from a source directory that has all write permissions disabled.
-
 The `configure` script contains *a lot* of system checks and default flags that
 we can use for telling the build system how to compile the code.
 
@@ -239,80 +233,20 @@ three options:
 Those options take as an argument a dash seperated tuple that describes
 a system and is made up the following way:
 
-	<architecture>-<kernel>-<userspace>
+	<architecture>-<vendor>-<kernel>-<userspace>
 
-Our 32 bit ARM system, running a Linux kernel with a Musl based user space,
-is described like this:
+The vendor part is completely optional and we will only use 3 components to
+discribe our toolchain. So for our 32 bit ARM system, running a Linux kernel
+with a Musl based user space, is described like this:
 
 	arm-linux-musleabihf
 
-The user space component itself consists of two parts: `musl` indicating
-the libc we use and `eabihf` indicating the ARM ABI that GCC should target.
+The user space component itself specifies that we use `musl` and we want to
+adhere to the ARM embedded ABI specification (`eabi` for short) with hardware
+float `hf` support.
 
-For the build system that I used, the tuple looks likes this:
-
-	x86_64-linux-gnu
-
-The final component `gnu` actually tells GCC that the system is using `glibc`.
-
-Both the user space component and the kernel component have exact meaning.
-Trying to insert clever free-form text for branding can mess up your build.
-If you really must, you can insert it between the kernel and the architecture,
-sort of like this:
-
-	x86_64-redhat-linux-gnu
-
-### The Makefile
-
-The generated Makefile also has a few tune-able knobs that we can use.
-
-Most importantly, we will use the `DESTDIR` variable that can be used to
-set a target directory where `make install` will install the programs.
-
-For instance, if `make install` would install a program to `/usr/bin/foo`,
-running `make DESTDIR=/tmp/test install` will instead install the program
-to `/tmp/test/usr/bin/foo`.
-
-The configure script has a similar option called **--prefix**. However this
-works in a different way and actually controls path prefix. The path in
-the **--prefix** will possibly be embedded in the program during compilation,
-while the `DESTDIR` variable does not affect compilation and changes the
-location of the root directory when installing.
-
-For instance if running the following:
-
-	./configure --prefix=/usr/local
-	make
-	make DESTDIR=/tmp/test install
-
-the program `foo` will be installed to `/tmp/test/usr/local/bin/foo` but the
-program and the build system "think" it has been installed
-to `/usr/local/bin/foo`.
-
-
-## Getting started
-
-At first, we set a few handy shell variables that will store the configuration
-of our toolchain:
-
-    TARGET="arm-linux-musleabihf"
-	HOST="x86_64-linux-gnu"
-    LINUX_ARCH="arm"
-    MUSL_CPU="arm"
-    GCC_CPU="armv6"
-
-The **TARGET** variable holds the *target triplet* of our system as described
-above.
-
-We also need the triplet for the local machine that we are going to build
-things on. For simplicity, I also set this manually.
-
-The **MUSL_CPU**, **GCC_CPU** and **LINUX_ARCH** variables hold the target
-CPU architecture. The later is used for the kernel build system, the former
-for the GCC build system and the for Musl.
-
-If you want to dynamically determine the **HOST** tuple, I suggest using
-[config.guess](https://git.savannah.gnu.org/gitweb/?p=config.git;a=tree):
+If you want to determine the tuple for the system *you are running on*, you can
+use the script [config.guess](https://git.savannah.gnu.org/gitweb/?p=config.git;a=tree):
 
 	$ HOST=$(./config.guess)
 	$ echo "$HOST"
@@ -332,7 +266,7 @@ The above is what I got on Fedora, however on Arch Linux I got this:
     $ echo "$MACHTYPE"
     x86_64
 
-Some other guides suggest using **OSTYPE**:
+Some other guides suggest using `uname` and **OSTYPE**:
 
     $ HOST=$(uname -m)-$OSTYPE
     $ echo $HOST
@@ -340,13 +274,81 @@ Some other guides suggest using **OSTYPE**:
 
 This works on Fedora and Arch Linux, but fails on OpenSuSE:
 
-	$ echo $OSTYPE
-	linux
+	$ HOST=$(uname -m)-$OSTYPE
+    $ echo $HOST
+    x86_64-linux
 
 If you want to safe yourself a lot of headache, refrain from using such
 adhockery and simply use `config.guess`. I only listed this here to warn you,
 because I have seen some guides and tutorials out there using this nonsense.
 
+As you saw here, I'm running on an x86_64 system and my user space is `gnu`,
+which tells autotools that the system is using `glibc`.
+
+You also saw that the `vendor` is sometimes used for branding, so use that
+field if you must, because the others have exact meaning and are parsed by
+the buildsystem.
+
+### The Installation Path
+
+When running `make install`, there are two ways to control where the program
+we just compiled is installed to.
+
+First of all, the `configure` script has an option called `--prefix`. That can
+be used like this:
+
+	./configure --prefix=/usr
+	make
+	make install
+
+In this case, `make install` will e.g. install the program to `/usr/bin` and
+install resources to `/usr/share`. The important thing here is that the prefix
+is used to generate path variables and the program "knows" what it's prefix is,
+i.e. it will fetch resource from `/usr/share`.
+
+But if instead we run this:
+
+	./configure --prefix=/opt/yoyodyne
+	make
+	make install
+
+The same program is installed to `/opt/yoyodyne/bin` and its resource end up
+in `/opt/yoyodyne/share`. The program again knows to look in the later path for
+its resources.
+
+The second option we have is using a Makefile variable called `DESTDIR`, which
+controls the behavior of `make install` *after* the program has been compiled:
+
+	./configure --prefix=/usr
+	make
+	make DESTDIR=/home/goliath/workdir install
+
+In this example, the program is installed to `/home/goliath/workdir/usr/bin`
+and the resources to `/home/goliath/workdir/usr/share`, but the program itself
+doesn't know that and "thinks" it lives in `/usr`. If we try to run it, it
+thries to load resources from `/usr/share` and will be sad because it can't
+find its files.
+
+## Building our Toolchain
+
+At first, we set a few handy shell variables that will store the configuration
+of our toolchain:
+
+    TARGET="arm-linux-musleabihf"
+	HOST="x86_64-linux-gnu"
+    LINUX_ARCH="arm"
+    MUSL_CPU="arm"
+    GCC_CPU="armv6"
+
+The **TARGET** variable holds the *target triplet* of our system as described
+above.
+
+We also need the triplet for the local machine that we are going to build
+things on. For simplicity, I also set this manually.
+
+The **MUSL_CPU**, **GCC_CPU** and **LINUX_ARCH** variables hold the target
+CPU architecture. The variables are used for musl, gcc and linux respecitively,
+because they cannot agree on consistent architecture names (except sometimes).
 
 ### Installing the kernel headers
 
@@ -355,7 +357,7 @@ kernel outside its source tree works a bit different compared to autotools
 based stuff.
 
 To keep things clean, we use a shell variable **srcdir** to remember where
-we kept the binutils source. A pattern that we will repeat later:
+we kept the kernel source. A pattern that we will repeat later:
 
     export KBUILD_OUTPUT="$BUILDROOT/build/linux"
     mkdir -p "$KBUILD_OUTPUT"
@@ -419,8 +421,8 @@ From the binutils build directory we run the configure script:
                       --disable-nls --disable-multilib
 
 We use the **--prefix** option to actually let the toolchain know that it is
-being installed in our toolchain directory, that we are going to run it from
-there and that it should locate helper programs in there.
+being installed in our toolchain directory, so it can locate its resources and
+helper programs when we run it.
 
 We also set the **--target** option to tell the build system what target the
 assembler, linker and other tools should generate **output** for. We don't
@@ -440,11 +442,11 @@ or 中文), mainly because we don't need it and not doing something typically
 saves time.
 
 Regarding the multilib option: Some architectures support executing code for
-other, related architectures (e.g. x86 code can run x86_64). On GNU/Linux
-distributions that support that, you typically have different versions of the
-same libraries (e.g. in *lib/* and *lib32/* directories) with programs for
-different architectures being linked to the appropriate libraries. We are only
-interested in a single architecture and don't need that, so we
+other, related architectures (e.g. an x86_64 machine can run 32 bit x86 code).
+On GNU/Linux distributions that support that, you typically have different
+versions of the same libraries (e.g. in *lib/* and *lib32/* directories) with
+programs for different architectures being linked to the appropriate libraries.
+We are only interested in a single architecture and don't need that, so we
 set **--disable-multilib**.
 
 
@@ -471,8 +473,8 @@ such as the assembler, linker and other tools that are prefixed with the host
 triplet.
 
 There is also a new directory called `toolchain/arm-linux-musleabihf` which
-contains a secondary system root with programs that aren't prefixed and linker
-scripts.
+contains a secondary system root with programs that aren't prefixed, and some
+linker scripts.
 
 ### First pass GCC
 
@@ -547,7 +549,6 @@ for our target. We are not interested in anything else.
 For the first make, you **really** want to specify a *-j NUM-PROCESSES* option
 here. Even the first pass GCC we are building here will take a while to compile
 on an ordinary desktop machine.
-
 
 ### C standard library
 
@@ -648,7 +649,7 @@ All that's left now is building and installing the compiler:
 
 This time, we are going to build and install *everything*. You *really* want to
 do a parallel build here. On my AMD Ryzen based desktop PC, building with
-`make -j 16` takes about 3 minutes. On my Intel i5 laptop takes circa 15
+`make -j 16` takes about 3 minutes. On my Intel i5 laptop it takes circa 15
 minutes. If you are using a laptop, you might want to open a window (assuming
 it is cold outside, i.e. won't help if you are in Taiwan).
 

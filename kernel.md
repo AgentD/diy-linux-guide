@@ -23,10 +23,10 @@ PC, [Syslinux](https://syslinux.org/) or (rarely outside of the PC world)
 [GNU GRUB](https://www.gnu.org/software/grub/).
 
 The final stage boot loader then takes care of loading the Linux kernel into
-memory and executing it. The boot loader passes along some informational data
-structures that it writes into memory and passes a pointer to this information
-to the kernel boot code. Besides system information (e.g. RAM layout), this
-typically also contains a command line for the kernel.
+memory and executing it. The boot loader typically generates some informational
+data structures in memory and passes a pointer to the kernel boot code. Besides
+system information (e.g. RAM layout), this typically also contains a command
+line for the kernel.
 
 On a very high level, after the boot loader jumps into the kernel, the kernel
 decompresses itself and does some internal initialization, initializes built-in
@@ -43,17 +43,16 @@ For very simple setups, it can be sufficient to pass a command line option to
 the kernel that tells it what device to mount for the root filesystem. For more
 complex setups, Linux supports mounting an *initial ramdisk*.
 
-In addition to the kernel and command line, the boot loader loads a
-compressed [cpio](https://en.wikipedia.org/wiki/Cpio) archive into memory and
-passes a pointer to the kernel where it can find it. The kernel then mount
-an in-memory filesystem as root filesystem and unpacks the cpio archive into
-it. Alternatively, the Linux build system can create this archive during kernel
-build and bake it directly into the kernel binary.
+An initial ram disk is a compressed archive that the boot loader loads into
+memory along with the kernel. Along with the kernel command line, the boot
+loader gives the kernel a pointer to archive start in memory.
 
-This cpio archive usually contains a small rescue shell and some helper
-programs. The process that the kernel executes as PID 1 is usually a shell
-script that does more sophisticated filesystem setup, transitions to the
-actual root filesystem and does an `exec` to the actual `init`.
+The kernel then mounts an in-memory filesystem as root filesystem, unpacks the
+archive into it and runs the PID 1 process from there. Typically this is a
+script or program that then does a more complex mount setup, transitions to
+the actual root file system and does an `exec` to start the actual PID 1
+process. If it fails at some point, it usually drops you into a tiny rescue
+shell that is also packed into the archive.
 
 Systems typically use [BusyBox](https://busybox.net/) as a tiny shell
 interpreter. BusyBox is a collection of tiny command line programs that
@@ -65,6 +64,9 @@ BusyBox gets compiled into a single monolithic binary. For the utility programs,
 symlinks or hard links are created that point to the binary and BusyBox, when
 run, will determine what utility to execute from the path through which it has
 been started.
+
+For historical reasons, Linux uses [cpio](https://en.wikipedia.org/wiki/Cpio)
+archives for the initial ramdisk.
 
 ### Device Tree
 
@@ -346,20 +348,26 @@ controlled by the GPU, since the SoC is basically a GPU with an ARM CPU slapped
 on to it.
 
 The GPU loads a binary called `bootcode.bin` from the SD card, which contains a
-proprietary boot loader blob for GPU. It does some initialization and chain
-loads `start.elf` which contains a firmware blob for the GPU. The GPU is running
-an RTOS called [ThreadX OS](https://en.wikipedia.org/wiki/ThreadX) and somewhere
-around [1M lines](https://www.raspberrypi.org/forums/viewtopic.php?t=53007#p406247)
+proprietary boot loader blob for the GPU. This in turn does some initialization
+and chain loads `start.elf` which contains a firmware blob for the GPU. The GPU
+is running an RTOS called [ThreadX OS](https://en.wikipedia.org/wiki/ThreadX)
+and somewhere around [>1M lines](https://www.raspberrypi.org/forums/viewtopic.php?t=53007#p406247)
 worth of firmware code.
 
 There are different versions of `start.elf`. The one called `start_x.elf`
 contains an additional driver for the camera interface, `start_db.elf` is a
 debug version and `start_cd.elf` is a version with a cut-down memory layout.
 
+The `start.elf` file uses an aditional file called `fixup.dat` to configure
+the RAM partitioning between the GPU and the CPU.
+
 In the end, the GPU firmware loads and parses a file called `config.txt` from
 the SD card, which contains configuration parameters, and `cmdline.txt` which
 contains the kernel command line. After parsing the configuration, it finally
 loads the kernel, the initrd, the device tree binaries and runs the kernel.
+
+Depending on the configuration, the GPU firmway may patch the device tree
+in-memory before running the kernel.
 
 ### Copying the Files Over
 
@@ -389,11 +397,12 @@ Then, we'll put the [cmdline.txt](firmware/cmdline.txt) onto the SD card:
 
 	console=tty0
 
-The `console` parameter tells the kernel what to use as a console device. We
-tell it to use the first video console which is what we will get at the HDMI
+The `console` parameter tells the kernel the tty where it prints its boot
+messages and that it uses as the standard input/output tty for our init script.
+We tell it to use the first video console which is what we will get at the HDMI
 output of the Raspberry Pi.
 
-Whats left is the device tree binaries and lastly the kernel and initrd:
+Whats left are the device tree binaries and lastly the kernel and initrd:
 
     mkdir -p overlays
     cp $SYSROOT/boot/dts/*-rpi-3-*.dtb .
