@@ -76,13 +76,13 @@ the kernel can query and the drivers tell the kernel what IDs that they can
 handle.
 
 On embedded machines running e.g. ARM based SoCs, the situation is a bit
-different. The various SoC vendors buy licenses for all the hardware "IP cores"
-and slap them together and multiplex them onto the CPU cores memory bus. The
+different. The various SoC vendors buy licenses for all the hardware "IP cores",
+slap them together and multiplex them onto the CPU cores memory bus. The
 hardware registers end up mapped to SoC specific memory locations and there is
 no real way to scan for possibly present hardware.
 
-In the past, Linux had something called "bored files" that where SoC specific
-C files that contained SoC & board specific initialization code, but this was
+In the past, Linux had something called "board files" that where SoC specific
+C files containing SoC & board specific initialization code, but this was
 considered too inflexible.
 
 Linux eventually adopted the concept of a device tree binary, which is
@@ -457,3 +457,10 @@ directly into the initrd and you should get a BusyBox shell.
 The PATH is propperly set and the most common shell commands should be there, so
 you can poke around the root filesystem which is in memory and has been unpacked
 from the `initrd.xz`.
+
+Don't be alarmed by the kernel boot prompt suddenly stopping. Even after the
+BusyBox shell starts, the kernel continues spewing messages for a short while
+and you may not see the shell prompt. Just hit the enter key a couple times.
+
+Also, the shell itself is running as PID 1. If you exit it, the kernel panics
+because PID 1 just died.
