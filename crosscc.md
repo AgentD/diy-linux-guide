@@ -366,7 +366,7 @@ we kept the kernel source. A pattern that we will repeat later:
 
     cd "$srcdir"
     make O="$KBUILD_OUTPUT" ARCH="$LINUX_ARCH" headers_check
-    make O="$KBUILD_OUTPUT" ARCH="$LINUX_ARCH" INSTALL_HDR_PATH="$SYSROOT" headers_install
+    make O="$KBUILD_OUTPUT" ARCH="$LINUX_ARCH" INSTALL_HDR_PATH="$SYSROOT/usr" headers_install
     cd "$BUILDROOT"
 
 
@@ -386,8 +386,8 @@ Lastly (before switching back to the root directory), we actually install the
 kernel headers into the sysroot directory where the libc later expects them
 to be.
 
-The `sysroot` directory should now contain an `include` directory with a number
-of sub directories that contain kernel headers.
+The `sysroot` directory should now contain a `usr/include` directory with a
+number of sub directories that contain kernel headers.
 
 Since I've seen the question in a few forums: it doesn't matter if the kernel
 version exactly matches the one running on your target system. The kernel
@@ -563,7 +563,7 @@ Musl is quite easy to build but requires some special handling, because it
 doesn't use autotools. The configure script is actually a hand written shell
 script that tries to emulate some of the typical autotools handling:
 
-    CC="${TARGET}-gcc" $srcdir/configure --prefix=/ --target="$TARGET"
+    CC="${TARGET}-gcc" $srcdir/configure --prefix=/usr --target="$TARGET"
 
 We override the shell variable **CC** to point to the cross compiler that we
 just built. Remember, we added **$TCDIR/bin** to our **PATH**.
@@ -578,15 +578,18 @@ We do the same thing for actually compiling musl and we explicitly set the
 
 The important part here, that later also applies for autotools based stuff, is
 that we don't set **--prefix** to the sysroot directory. We set the prefix so
-that the build system "thinks" it compiles the library to be installed in `/`,
-but then we install the compiled binaries and headers to the sysroot directory.
+that the build system "thinks" it compiles the library to be installed
+in `/usr`, but then we install the compiled binaries and headers to the sysroot
+directory.
 
-The `sysroot/include` directory should now contain a bunch of standard headers.
-Likewise, the `sysroot/lib` directory should now contain a `libc.so`, a bunch
-of dummy libraries, and the startup object code provided by Musl.
+The `sysroot/usr/include` directory should now contain a bunch of standard
+headers. Likewise, the `sysroot/usr/lib` directory should now contain a
+`libc.so`, a bunch of dummy libraries, and the startup object code provided
+by Musl.
 
-The `sysroot/lib/ld-musl-armhf.so.1` is the loader for dynamically linked
-programs and in the case of Musl, just a symlink to `libc.so`.
+Despite the prefix we set, Musl installs a `sysroot/lib/ld-musl-armhf.so.1`
+symlink which points to `/usr/lib/libc.so`. Dynamically linked programs built
+with our toolchain will have `/lib/ld-musl-armhf.so.1` set as their loader.
 
 ### Second pass GCC
 
@@ -606,7 +609,7 @@ Most of the configure options should be familiar already:
                       --enable-c99 --enable-long-long \
                       --disable-libmudflap --disable-multilib \
                       --disable-libsanitizer --with-arch="$CPU" \
-                      --with-native-system-header-dir="/include" \
+                      --with-native-system-header-dir="/usr/include" \
                       --with-float=hard --with-fpu=neon-vfpv3
 
 For the second pass, we also build a C++ compiler. The options **--enable-c99**
@@ -634,11 +637,9 @@ of glibc. Projects like buildroot simply disable it when using musl. It "only"
 provides a static code analysis plugin for the compiler.
 
 The option **--with-native-system-header-dir** is of special interest for our
-cross compiler. Since we pointed the root directory to **$SYSROOT**, the
-compiler will look for headers in **$SYSROOT/usr/include**, but we didn't
-install them to */usr/include*, we installed them to
-**$SYSROOT/include**, so we have to tell the build system that is should
-look in */include* (relative to the root directory) instead.
+cross compiler. We explicitly tell it to look for headers in `/usr/include`,
+relative to our **$SYSROOT** directory. We could just as easily place the
+headers somewhere else in the previous steps and have it look there.
 
 All that's left now is building and installing the compiler:
 
