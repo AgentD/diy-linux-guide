@@ -1,4 +1,4 @@
-# Building a Bootable Kernel and initrd
+# Building a Bootable Kernel and Initial RAM Filesystem
 
 This section outlines how to use the cross compiler toolchain you just built
 for cross-compiling a bootable kernel, and how to get the kernel to run on
@@ -37,14 +37,14 @@ At this point, boot strapping is done as far as the kernel is concerned. The
 process with PID 1 usually spawns (i.e. `fork` + `exec`) and manages a bunch
 of daemon processes. Some of them allowing users to log in and get a shell.
 
-### Initial Ramdisk
+### Initial RAM Filesystem
 
 For very simple setups, it can be sufficient to pass a command line option to
 the kernel that tells it what device to mount for the root filesystem. For more
-complex setups, Linux supports mounting an *initial ramdisk*.
+complex setups, Linux supports mounting an *initial RAM filesystem*.
 
-An initial ram disk is a compressed archive that the boot loader loads into
-memory along with the kernel. Along with the kernel command line, the boot
+This basically means that in addition to the kernel, the boot loader loads
+a compressed archive into memory. Along with the kernel command line, the boot
 loader gives the kernel a pointer to archive start in memory.
 
 The kernel then mounts an in-memory filesystem as root filesystem, unpacks the
@@ -54,19 +54,25 @@ the actual root file system and does an `exec` to start the actual PID 1
 process. If it fails at some point, it usually drops you into a tiny rescue
 shell that is also packed into the archive.
 
+For historical reasons, Linux uses [cpio](https://en.wikipedia.org/wiki/Cpio)
+archives for the initial ram filesystem.
+
 Systems typically use [BusyBox](https://busybox.net/) as a tiny shell
 interpreter. BusyBox is a collection of tiny command line programs that
 implement basic commands available on Unix-like system, ranging from `echo`
 or `cat` all the way to a small `vi` and `sed` implementation and including
 two different shell implementations to choose from.
 
-BusyBox gets compiled into a single monolithic binary. For the utility programs,
-symlinks or hard links are created that point to the binary and BusyBox, when
-run, will determine what utility to execute from the path through which it has
-been started.
+BusyBox gets compiled into a single, monolithic binary. For the utility
+programs, symlinks or hard links are created that point to the binary.
+BusyBox, when run, will determine what utility to execute from the path
+through which it has been started.
 
-For historical reasons, Linux uses [cpio](https://en.wikipedia.org/wiki/Cpio)
-archives for the initial ramdisk.
+**NOTE**: The initial RAM filesystem, or **initramfs** should not be confused
+with the older concept of an initial RAM disk, or **initrd**. The initial RAM
+disk actually uses a disk image instead of an archive and the kernel internally
+emulates a block device that reads blocks from RAM. A regular filesystem driver
+is used to mount the RAM backed block device as root filesystem.
 
 ### Device Tree
 
@@ -90,7 +96,7 @@ basically a binary blob that hierarchically describes the hardware present on
 the system and how the kernel can interface with it.
 
 The boot loader loads the device tree into memory and tells the kernel where it
-is, just like it already does for the initial ramdisk and command line.
+is, just like it already does for the initial ramfs and command line.
 
 In theory, a kernel binary can now be started on a number of different boards
 with the same CPU architecture, without recompiling (assuming it has all the
@@ -108,7 +114,7 @@ i.e. a newer kernel should *always* work with an older DTB file.
 
 ## Overview
 
-In this section, we will cross compile BusyBox, build a small initial ramdisk,
+In this section, we will cross compile BusyBox, build a small initial ramfs,
 cross compile the kernel and get all of this to run on the Raspberry Pi.
 
 Unless you have used the `download.sh` script from [the cross toolchain](crosscc.md),
@@ -139,13 +145,13 @@ configuration file that contains a list of key-value pairs for enabling and
 tuning features.
 
 I prepared a file `bbstatic.config` with the configuration that I used. I
-disabled a lot of stuff that we don't need inside an initrd, but most
+disabled a lot of stuff that we don't need inside an initramfs, but most
 importantly, I changed the following settings:
 
  - **CONFIG_INSTALL_NO_USR** set to yes, so BusyBox creates a flat hierarchy
    when installing itself.
  - **CONFIG_STATIC** set to yes, so BusyBox is statically linked and we don't
-   need to pack any libraries or a loader into our initrd.
+   need to pack any libraries or a loader into our initramfs.
 
 If you want to customize my configuration, copy it into a freshly extracted
 BusyBox tarball, rename it to `.config` and run the menuconfig target:
@@ -263,15 +269,15 @@ worth of modules because the Raspberry Pi default configuration has all bells
 and whistles turned on. Fell free to adjust the kernel configuration and throw
 out everything you don't need.
 
-## Building an Inital Ramdisk
+## Building an Inital RAM Filesystem
 
 First of all, although we do everything by hand here, we are going to create a
 build directory to keep everything neatly separated:
 
-    mkdir -p "$BUILDROOT/build/initrd"
-	cd "$BUILDROOT/build/initrd"
+    mkdir -p "$BUILDROOT/build/initramfs"
+	cd "$BUILDROOT/build/initramfs"
 
-Technically, the initial ramdisk is a simple cpio archive. However, there are
+Technically, the initramfs image is a simple cpio archive. However, there are
 some pitfalls here:
 
 * There are various versions of the cpio format, some binary, some text based.
@@ -289,7 +295,7 @@ produces exactely the format that the kernel understands.
 
 Here is the simple file listing that I used:
 
-    cat > initrd.files <<_EOF
+    cat > initramfs.files <<_EOF
     dir boot 0755 0 0
     dir dev 0755 0 0
     dir lib 0755 0 0
@@ -301,7 +307,7 @@ Here is the simple file listing that I used:
     nod dev/console 0600 0 0 c 5 1
     file bin/busybox $SYSROOT/bin/bbstatic 0755 0 0
     slink bin/sh /bin/busybox 0777 0 0
-    file init $BUILDROOT/build/initrd/init 0755 0 0
+    file init $BUILDROOT/build/initramfs/init 0755 0 0
     _EOF
 
 In case you are wondering about the first and last line, this is called a
@@ -362,11 +368,10 @@ filesystems:
 * `devtmpfs` is a pseudo filesystem that takes care of managing device files
   for us. We mount it over `/dev`.
 
-We can now finally put everything together into an XZ compressed initial
-ramdisk:
+We can now finally put everything together into an XZ compressed archive:
 
-    ./gen_init_cpio initrd.files | xz --check=crc32 > initrd.xz
-    cp initrd.xz "$SYSROOT/boot"
+    ./gen_init_cpio initramfs.files | xz --check=crc32 > initramfs.xz
+    cp initramfs.xz "$SYSROOT/boot"
     cd "$BUILDROOT"
 
 The option `--check=crc32` forces the `xz` utility to create CRC-32 checksums
@@ -403,7 +408,7 @@ the RAM partitioning between the GPU and the CPU.
 In the end, the GPU firmware loads and parses a file called `config.txt` from
 the SD card, which contains configuration parameters, and `cmdline.txt` which
 contains the kernel command line. After parsing the configuration, it finally
-loads the kernel, the initrd, the device tree binaries and runs the kernel.
+loads the kernel, the initramfs, the device tree binaries and runs the kernel.
 
 Depending on the configuration, the GPU firmway may patch the device tree
 in-memory before running the kernel.
@@ -423,14 +428,14 @@ We create a minimal [config.txt](firmware/config.txt) in the root directory:
 
 	dtparam=
 	kernel=zImage
-	initramfs initrd.xz followkernel
+	initramfs initramfs.xz followkernel
 
 The first line makes sure the boot loader doesn't mangle the device tree. The
 second one specifies the kernel binary that should be loaded and the last one
-specifies the initrd image. Note that there is no `=` sign in the last
+specifies the initramfs image. Note that there is no `=` sign in the last
 line. This field has a different format and the boot loader will ignore it if
 there is an `=` sign. The `followkernel` attribute tells the boot loader to put
-the initrd into memory right after the kernel binary.
+the initramfs into memory right after the kernel binary.
 
 Then, we'll put the [cmdline.txt](firmware/cmdline.txt) onto the SD card:
 
@@ -441,13 +446,13 @@ messages and that it uses as the standard input/output tty for our init script.
 We tell it to use the first video console which is what we will get at the HDMI
 output of the Raspberry Pi.
 
-Whats left are the device tree binaries and lastly the kernel and initrd:
+Whats left are the device tree binaries and lastly the kernel and initramfs:
 
     mkdir -p overlays
     cp $SYSROOT/boot/dts/*-rpi-3-*.dtb .
     cp $SYSROOT/boot/dts/overlays/*.dtbo overlays/
 
-    cp $SYSROOT/boot/initrd.xz .
+    cp $SYSROOT/boot/initramfs.xz .
     cp $SYSROOT/boot/zImage .
 
 If you are done, unmount the micro SD card and plug it into your Raspberr Pi.
@@ -456,11 +461,11 @@ If you are done, unmount the micro SD card and plug it into your Raspberr Pi.
 ### Booting It Up
 
 If you connect the HDMI port and power up the Raspberry Pi, it should boot
-directly into the initrd and you should get a BusyBox shell.
+directly into the initramfs and you should get a BusyBox shell.
 
 The PATH is propperly set and the most common shell commands should be there, so
 you can poke around the root filesystem which is in memory and has been unpacked
-from the `initrd.xz`.
+from the `initramfs.xz`.
 
 Don't be alarmed by the kernel boot prompt suddenly stopping. Even after the
 BusyBox shell starts, the kernel continues spewing messages for a short while
