@@ -55,9 +55,9 @@ links below point to the exact versions that I used.
 * [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20201201-1.tar.gz).
   Linux is a very popular OS kernel that we will use on our target system.
   We need it to build the the C standard library for our toolchain.
-* [Musl](https://www.musl-libc.org/releases/musl-1.2.1.tar.gz). A tiny
+* [Musl](https://www.musl-libc.org/releases/musl-1.2.2.tar.gz). A tiny
   C standard library implementation.
-* [Binutils](https://ftp.gnu.org/gnu/binutils/binutils-2.35.tar.xz). This
+* [Binutils](https://ftp.gnu.org/gnu/binutils/binutils-2.36.tar.xz). This
   contains the GNU assembler, linker and various tools for working with
   executable files.
 * [GCC](https://ftp.gnu.org/gnu/gcc/gcc-10.2.0/gcc-10.2.0.tar.xz), the GNU
@@ -109,14 +109,14 @@ Right now, you should have a directory tree that looks something like this:
 * toolchain/
    * bin/
 * src/
-   * binutils-2.35/
+   * binutils-2.36/
    * gcc-10.2.0/
-   * musl-1.2.1/
+   * musl-1.2.2/
    * linux-raspberrypi-kernel_1.20201201-1/
 * download/
-   * binutils-2.35.tar.xz
+   * binutils-2.36.tar.xz
    * gcc-10.2.0.tar.xz
-   * musl-1.2.1.tar.gz
+   * musl-1.2.2.tar.gz
    * raspberrypi-kernel_1.20201201-1.tar.gz
 * sysroot/
 
@@ -412,7 +412,7 @@ it:
     mkdir -p "$BUILDROOT/build/binutils"
     cd "$BUILDROOT/build/binutils"
 
-    srcdir="$BUILDROOT/src/binutils-2.35"
+    srcdir="$BUILDROOT/src/binutils-2.36"
 
 From the binutils build directory we run the configure script:
 
@@ -557,7 +557,7 @@ We create our build directory and change there:
     mkdir -p "$BUILDROOT/build/musl"
     cd "$BUILDROOT/build/musl"
 
-    srcdir="$BUILDROOT/src/musl-1.2.1"
+    srcdir="$BUILDROOT/src/musl-1.2.2"
 
 Musl is quite easy to build but requires some special handling, because it
 doesn't use autotools. The configure script is actually a hand written shell

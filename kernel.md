@@ -114,7 +114,7 @@ cross compile the kernel and get all of this to run on the Raspberry Pi.
 Unless you have used the `download.sh` script from [the cross toolchain](crosscc.md),
 you will need to download and unpack the following:
 
-* [BusyBox](https://busybox.net/downloads/busybox-1.32.0.tar.bz2)
+* [BusyBox](https://busybox.net/downloads/busybox-1.32.1.tar.bz2)
 * [Linux](https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20201201-1.tar.gz)
 
 You should still have the following environment variables set from building the
@@ -163,7 +163,7 @@ Alternatively you can start from scratch by creating a default configuration:
 
 To compile BusyBox, we'll first do the usual setup for the out-of-tree build:
 
-    srcdir="$BUILDROOT/src/busybox-1.32.0"
+    srcdir="$BUILDROOT/src/busybox-1.32.1"
     export KBUILD_OUTPUT="$BUILDROOT/build/bbstatic"
 
     mkdir -p "$KBUILD_OUTPUT"
@@ -241,6 +241,10 @@ are the loadable kernel modules (i.e. drivers). You really want to insert
 a `-j NUMBER_OF_JOBS` in the second line, or it may take a considerable amount
 of time.
 
+Also, you *really* want to specify an argument after `-j`, otherwise the kernel
+build system will spawn processes until kingdome come (i.e. until your system
+runs out of resources and the OOM killer steps in).
+
 Lastly, I installed all of it into the sysroot for convenience:
 
     mkdir -p "$SYSROOT/boot"
@@ -254,7 +258,7 @@ The `modules_install` target creates a directory hierarchy `sysroot/lib/modules`
 containing a sub directory for each kernel version with the kernel modules and
 dependency information.
 
-The kernel binary will be circa 5 MiB in size and produce another circa 55 MiB
+The kernel binary will be circa 6 MiB in size and produce another circa 55 MiB
 worth of modules because the Raspberry Pi default configuration has all bells
 and whistles turned on. Fell free to adjust the kernel configuration and throw
 out everything you don't need.
