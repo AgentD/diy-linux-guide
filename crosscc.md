@@ -11,43 +11,7 @@ The toolchain we are building generates 32 bit ARM code intended to run on
 a Raspberry Pi 3. [Musl](https://www.musl-libc.org/) is used as a C standard
 library implementation.
 
-## Directory Setup
-
-First of all, you should create an empty directory somewhere where you want
-to build the cross toolchain and later the entire system.
-
-For convenience, we will store the absolute path to this directory inside a
-shell variable called **BUILDROOT** and create a few directories to organize
-our stuff in:
-
-    BUILDROOT=$(pwd)
-
-    mkdir -p "build" "src" "download" "toolchain/bin" "sysroot"
-
-I stored the downloaded packages in the **download** directory and extracted
-them to a directory called **src**.
-
-We will later build packages outside the source tree (GCC even requires that
-nowadays), inside a sub directory of **build**.
-
-Our final toolchain will end up in a directory called **toolchain**.
-
-We store the toolchain location inside another shell variable that I called
-**TCDIR** and prepend the executable path of our toolchain to the **PATH**
-variable:
-
-    TCDIR="$BUILDROOT/toolchain"
-    export PATH="$TCDIR/bin:$PATH"
-
-
-The **sysroot** directory will hold the cross compiled binaries for our target
-system, as well as headers and libraries used for cross compiling stuff. It is
-basically the `/` directory of the system we are going to build. For
-convenience, we will also store its absolute path in a shell variable:
-
-	SYSROOT="$BUILDROOT/sysroot"
-
-## Prerequisites
+## Downloading and unpacking everything
 
 The following source packages are required for building the toolchain. The
 links below point to the exact versions that I used.
@@ -63,43 +27,11 @@ links below point to the exact versions that I used.
 * [GCC](https://ftp.gnu.org/gnu/gcc/gcc-10.2.0/gcc-10.2.0.tar.xz), the GNU
   compiler collection. Contains compilers for C and other languages.
 
-For compiling the packages you will need:
-
-* gcc
-* g++
-* make
-* flex
-* bison
-* gperf
-* makeinfo
-* ncurses (with headers)
-* awk
-* automake
-* help2man
-* curl
-* pkg-config
-* libtool
-* openssl (with headers)
-
-
-In case you wonder: you need the C++ compiler to build GCC. The GCC code base
-mainly uses C99, but with some additional C++ features. makeinfo is used by
-the GNU utilities that generate info pages from texinfo. ncurses is mainly
-needed by the kernel build system for `menuconfig`. OpenSSL is requried to
-compile the kernel later on.
-
-The list should be fairly complete, but I can't guarantee that I didn't miss
-something. Normally I work on systems with tons of development tools and
-libraries already installed, so if something is missing, please install it
-and maybe let me know.
-
-## Downloading and unpacking everything
-
 Simply download the packages listed above into `download` and unpack them
 into `src`.
 
 For convenience, I provided a small shell script called `download.sh` that,
-when run inside `$BUILDROOT`, does this and also verifies the `sha256sum`
+when run inside `$BUILDROOT` does this and also verifies the `sha256sum`
 of the packages, which will further make sure that you are using the **exact**
 same versions as I am.
 

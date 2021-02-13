@@ -13,6 +13,9 @@ command lines around (I'm looking at you, LFS).
 
 This guide is divided into the following parts:
 
+* [Basic Setup](setup.md). Lists some tools that you should have installed and
+  walks through the steps of setting up the directory tree that we work in, as
+  well as a few handy environment variables.
 * [Building a cross compiler toolchain](crosscc.md).
 * [Cross compiling a statically linked BusyBox and the kernel](kernel.md). The
   BusyBox is packaged into a small initrd. We will make it boot on the
