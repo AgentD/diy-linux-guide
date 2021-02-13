@@ -1,0 +1,41 @@
+dir /boot 0755 0 0
+dir /etc 0755 0 0
+dir /dev 0755 0 0
+dir /tmp 1777 0 0
+dir /mnt 0755 0 0
+dir /proc 0755 0 0
+dir /run 0755 0 0
+dir /sys 0755 0 0
+dir /var 0755 0 0
+
+dir /bin 0755 0 0
+glob /bin 0755 0 0 bin
+
+dir /lib 0755 0 0
+glob /lib 0755 0 0 -type d lib
+glob /lib/bash 0755 0 0 -type f lib/bash
+glob /lib/gawk 0755 0 0 -type f lib/gawk
+glob /lib/libexec 0755 0 0 -type f lib/libexec
+glob /lib/modules 0755 0 0 -type f lib/modules
+glob /lib/modules 0777 0 0 -type l lib/modules
+slink /lib/terminfo 0777 0 0 /usr/share/terminfo
+glob /lib 0755 0 0 -type f -name "*.so*" -nonrecursive lib
+glob /lib 0777 0 0 -type l -name "*.so.*" -nonrecursive lib
+
+dir /usr 0755 0 0
+dir /usr/share 0755 0 0
+slink /usr/bin 0777 0 0 /bin
+slink /usr/lib 0777 0 0 /lib
+dir /usr/share/awk 0755 0 0
+dir /usr/share/misc 0755 0 0
+dir /usr/share/nano 0755 0 0
+dir /usr/share/tabset 0755 0 0
+dir /usr/share/terminfo 0755 0 0
+glob /usr/share/awk 0644 0 0 -type f usr/share/awk
+glob /usr/share/misc 0644 0 0 -type f usr/share/misc
+glob /usr/share/nano 0755 0 0 -type d usr/share/nano
+glob /usr/share/nano 0644 0 0 -type f usr/share/nano
+glob /usr/share/tabset 0644 0 0 -type f usr/share/tabset
+glob /usr/share/terminfo 0755 0 0 -type d usr/share/terminfo
+glob /usr/share/terminfo 0644 0 0 -type f usr/share/terminfo
+glob /usr/share/terminfo 0777 0 0 -type l usr/share/terminfo

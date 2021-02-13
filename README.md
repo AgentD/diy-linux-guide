@@ -20,7 +20,7 @@ This guide is divided into the following parts:
 * [Cross compiling a statically linked BusyBox and the kernel](02_kernel.md).
   The BusyBox is packaged into a small initramfs. We will make it boot on the
   Rapsberry Pi and explore some parts of the Linux boot process.
-* [Building a more sophisticated userland](userland.md). Mostly a
-  Linux-From-Scratch-Style "lets build some packages". The userland will be
-  packed into a SquashFS image. The BusyBox based initrd is modified to mount
-  it and switch into it.
+* [Building a simple userland](03_basic_usr.md). Mostly a
+  Linux-From-Scratch-Style walkthrough to building some packages for a simple
+  GNU userland. The userland is packed into a SquashFS image. The BusyBox
+  based initrd is modified to mount it and switch into it.
