@@ -117,7 +117,7 @@ i.e. a newer kernel should *always* work with an older DTB file.
 In this section, we will cross compile BusyBox, build a small initial ramfs,
 cross compile the kernel and get all of this to run on the Raspberry Pi.
 
-Unless you have used the `download.sh` script from [the cross toolchain](crosscc.md),
+Unless you have used the `download.sh` script from [the cross toolchain](01_crosscc.md),
 you will need to download and unpack the following:
 
 * [BusyBox](https://busybox.net/downloads/busybox-1.32.1.tar.bz2)
@@ -138,7 +138,7 @@ cross toolchain:
 ## Building BusyBox
 
 The BusyBox build system is basically the same as the Linux kernel build system
-that we already used for [building a cross toolchain](crosscc.md).
+that we already used for [building a cross toolchain](01_crosscc.md).
 
 Just like the kernel (which we haven't built yet), BusyBox uses has a
 configuration file that contains a list of key-value pairs for enabling and

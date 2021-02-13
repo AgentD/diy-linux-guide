@@ -13,12 +13,12 @@ command lines around (I'm looking at you, LFS).
 
 This guide is divided into the following parts:
 
-* [Basic Setup](setup.md). Lists some tools that you should have installed and
-  walks through the steps of setting up the directory tree that we work in, as
-  well as a few handy environment variables.
-* [Building a cross compiler toolchain](crosscc.md).
-* [Cross compiling a statically linked BusyBox and the kernel](kernel.md). The
-  BusyBox is packaged into a small initrd. We will make it boot on the
+* [Basic Setup](00_setup.md). Lists some tools that you should have
+  installed and walks through the steps of setting up the directory tree that
+  we work in, as well as a few handy environment variables.
+* [Building a cross compiler toolchain](01_crosscc.md).
+* [Cross compiling a statically linked BusyBox and the kernel](02_kernel.md).
+  The BusyBox is packaged into a small initramfs. We will make it boot on the
   Rapsberry Pi and explore some parts of the Linux boot process.
 * [Building a more sophisticated userland](userland.md). Mostly a
   Linux-From-Scratch-Style "lets build some packages". The userland will be
