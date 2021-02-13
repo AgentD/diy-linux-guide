@@ -70,3 +70,49 @@ basically the `/` directory of the system we are going to build. For
 convenience, we will also store its absolute path in a shell variable:
 
     SYSROOT="$BUILDROOT/sysroot"
+
+
+### The Filesystem Hierarchy
+
+You might be familiar with the [Linux Filesyste Hiearchy Standard](https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard)
+which strives to standardize the root filesytem layout across GNU/Linux distros.
+
+This layout of course goes back to the [directory hierarchy on Unix Systems](https://en.wikipedia.org/wiki/Unix_directory_structure)
+which in turn hasn't been designed in any particular way, but evolved over the
+course of history.
+
+One issue that we will run into is that there are multiple possible places that
+libraries and program binaries could be installed to:
+ - `/bin`
+ - `/sbin`
+ - `/lib`
+ - `/usr/bin`
+ - `/usr/sbin`
+ - `/usr/lib`
+
+Yes, I know that there is an additional `/usr/local` sub-sub-hierarchy, but we'll
+ignore that once, since *nowadays** nobody outside the BSD world actually uses
+that.
+
+The split between `/` and `/usr` has historical reasons. The `/usr` directory
+used to be the home directory for the system users (e.g. `/usr/ken` was Ken
+Thompsons and `/usr/dmr` that of Dennis M. Ritchie) and was mounted from a
+separate disk during boot. At some point space on the primary disk grew tight
+and programs that weren't essential for system booting were moved from `/bin`
+to `/usr/bin` to free up some space. The home directories were later moved to
+an additional disk, mounted to `/home`. [So basically this split is a historic artifact](http://lists.busybox.net/pipermail/busybox/2010-December/074114.html).
+
+Anyway, for the system we are building, I will get rid of the pointless `/bin`
+and `/sbin` split, as well as the `/usr` sub-hiearchy split, but some programs
+are stubborn and use hard coded paths (remember the last time you
+used `#!/usr/bin/env` to make a script "portable"? You just replaced one
+portabillity problem with another one). So we will set up symlinks in `/usr`
+pointing back to `/bin` and `/lib`.
+
+Enough for the ranting, lets setup our directory hierarchy:
+
+    mkdir -p "$SYSROOT/bin" "$SYSROOT/lib"
+    mkdir -p "$SYSROOT/usr/share" "$SYSROOT/usr/include"
+
+    ln -s "../bin" "$SYSROOT/usr/bin"
+    ln -s "../lib" "$SYSROOT/usr/lib"

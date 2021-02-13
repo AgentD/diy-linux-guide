@@ -495,13 +495,14 @@ Musl is quite easy to build but requires some special handling, because it
 doesn't use autotools. The configure script is actually a hand written shell
 script that tries to emulate some of the typical autotools handling:
 
-    CC="${TARGET}-gcc" $srcdir/configure --prefix=/usr --target="$TARGET"
+    CC="${TARGET}-gcc" $srcdir/configure --prefix=/ --includedir=/usr/include \
+                                         --target="$TARGET"
 
 We override the shell variable **CC** to point to the cross compiler that we
 just built. Remember, we added **$TCDIR/bin** to our **PATH**.
 
-We do the same thing for actually compiling musl and we explicitly set the
-**DESTDIR** variable for installing:
+We also set the compiler for actually compiling musl and we explicitly set
+the **DESTDIR** variable for installing:
 
     CC="${TARGET}-gcc" make
     make DESTDIR="$SYSROOT" install
@@ -511,7 +512,7 @@ We do the same thing for actually compiling musl and we explicitly set the
 The important part here, that later also applies for autotools based stuff, is
 that we don't set **--prefix** to the sysroot directory. We set the prefix so
 that the build system "thinks" it compiles the library to be installed
-in `/usr`, but then we install the compiled binaries and headers to the sysroot
+in `/`, but then we install the compiled binaries and headers to the sysroot
 directory.
 
 The `sysroot/usr/include` directory should now contain a bunch of standard
@@ -519,9 +520,9 @@ headers. Likewise, the `sysroot/usr/lib` directory should now contain a
 `libc.so`, a bunch of dummy libraries, and the startup object code provided
 by Musl.
 
-Despite the prefix we set, Musl installs a `sysroot/lib/ld-musl-armhf.so.1`
-symlink which points to `/usr/lib/libc.so`. Dynamically linked programs built
-with our toolchain will have `/lib/ld-musl-armhf.so.1` set as their loader.
+The prefix is set to `/` because we want the libraries to be installed
+to `/lib` instead of `/usr/lib`, but we still want the header files
+in `/usr/include`, so we explicitly specifiy the **--includedir**.
 
 ### Second pass GCC
 

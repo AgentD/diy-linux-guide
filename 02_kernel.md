@@ -198,7 +198,6 @@ What is now left is to compile BusyBox.
 Before returning to the build root directory, I installed the resulting binary
 to the sysroot directory as `bbstatic`.
 
-    mkdir -p "$SYSROOT/bin"
     cp busybox "$SYSROOT/bin/bbstatic"
     cd "$BUILDROOT"
 
